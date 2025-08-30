@@ -65,10 +65,11 @@ export function ReactionNotificationItem({ notification }: { notification: React
   // Determine if this is a reply or a thread
   const isReply = post.metadata?.__typename === "TextOnlyMetadata";
   const threadAddress = post.feed.address;
-  const navigationUrl = `/thread/${threadAddress}${isReply ? `/reply/${post.id}` : ""}`;
+  const navigationUrl = `/thread/${threadAddress}${isReply ? "" : ""}`;
+  const replyNavigationUrl = isReply ? `/reply/${post.id}` : navigationUrl;
 
   return (
-    <NotificationCard href={navigationUrl}>
+    <NotificationCard href={isReply ? replyNavigationUrl : navigationUrl}>
       <div className="flex items-start gap-4">
         <AvatarProfileLink author={firstAuthor} />
         <div className="min-w-0 flex-1">

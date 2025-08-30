@@ -104,7 +104,7 @@ export function ThreadReplyCard({
   // Handler to copy reply link
   const handleCopyLink = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
-    const url = `${window.location.origin}/thread/${threadAddress}/reply/${reply.id}`;
+    const url = `${window.location.origin}/reply/${reply.id}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success("Reply link copied to clipboard!");

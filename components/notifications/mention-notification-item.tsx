@@ -27,10 +27,11 @@ export function MentionNotificationItem({ notification }: { notification: Mentio
   // Determine if this is a reply or a thread
   const isReply = post.metadata?.__typename === "TextOnlyMetadata";
   const threadAddress = notification.post.feed.address;
-  const navigationUrl = `/thread/${threadAddress}${isReply ? `/reply/${post.id}` : ""}`;
+  const navigationUrl = `/thread/${threadAddress}${isReply ? "" : ""}`;
+  const replyNavigationUrl = isReply ? `/reply/${post.id}` : navigationUrl;
 
   return (
-    <NotificationCard href={navigationUrl}>
+    <NotificationCard href={isReply ? replyNavigationUrl : navigationUrl}>
       <div className="flex items-start gap-4">
         {author && <AvatarProfileLink author={author} />}
         <div className="min-w-0 flex-1">
