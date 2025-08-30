@@ -22,7 +22,10 @@ function getThreadContent(thread: Thread): string {
 }
 
 export function RepliedToCard({ reply }: RepliedToCardProps) {
-  // If reply has a parentReplyId, fetch that reply; otherwise fetch the thread
+  // Conditionally fetch data based on what we're replying to
+  const shouldFetchParentReply = !!reply.parentReplyId;
+  const shouldFetchThread = !reply.parentReplyId && !!reply.thread;
+  
   const { data: parentReply, isLoading: parentReplyLoading } = useReply(
     reply.parentReplyId || ""
   );
@@ -32,13 +35,20 @@ export function RepliedToCard({ reply }: RepliedToCardProps) {
   );
 
   // Only show loading for the data we actually need
-  const isLoading = reply.parentReplyId ? parentReplyLoading : threadLoading;
+  const isLoading = shouldFetchParentReply 
+    ? parentReplyLoading 
+    : shouldFetchThread 
+      ? threadLoading 
+      : false;
 
   if (isLoading) {
     return (
       <Card className="rounded-lg bg-gray-50/50 shadow-sm dark:border-gray-700/40 dark:bg-gray-800/50">
         <CardContent className="p-4">
-          <LoadingSpinner text="Loading replied-to content..." />
+          <div className="flex items-center gap-2">
+            <LoadingSpinner />
+            <span className="text-sm text-muted-foreground">Loading replied-to content...</span>
+          </div>
         </CardContent>
       </Card>
     );
