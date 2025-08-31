@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { addReaction, fetchPost, undoReaction } from "@lens-protocol/client/actions";
-import { Post, PostId, PostReactionType, postId as toPostId, useSessionClient } from "@lens-protocol/react";
+import { fetchPost } from "@/lib/external/lens/primitives/posts";
+import { vote } from "@/lib/services/vote/vote";
+import { PostId, PostReactionType, useSessionClient } from "@lens-protocol/react";
 import { toast } from "sonner";
 
 interface UseVotingOptions {
   postid: PostId;
-  upvoteLabel?: string;
-  downvoteLabel?: string;
 }
 
-export function useVoting({ postid, upvoteLabel = "Upvote", downvoteLabel = "Downvote" }: UseVotingOptions) {
+export function useVoting({ postid }: UseVotingOptions) {
   const [hasUserUpvoted, setHasUserUpvoted] = useState(false);
   const [hasUserDownvoted, setHasUserDownvoted] = useState(false);
   const [isLoading, setIsLoading] = useState<"up" | "down" | "score" | null>("score");
@@ -26,17 +25,15 @@ export function useVoting({ postid, upvoteLabel = "Upvote", downvoteLabel = "Dow
         return;
       }
       try {
-        const postResult = await fetchPost(sessionClient.data, { post: toPostId(postid) });
-        if (postResult.isErr()) {
-          console.error("Failed to fetch post reactions:", postResult.error);
+        const post = await fetchPost(postid, sessionClient.data);
+        if (!post) {
           setIsLoading(null);
           return;
         }
-        const fetchedPost = postResult.value as Post;
-        setHasUserUpvoted(!!fetchedPost.operations?.hasUpvoted);
-        setHasUserDownvoted(!!fetchedPost.operations?.hasDownvoted);
-        const upvotes = fetchedPost.stats?.upvotes ?? 0;
-        const downvotes = fetchedPost.stats?.downvotes ?? 0;
+        setHasUserUpvoted(!!post.operations?.hasUpvoted);
+        setHasUserDownvoted(!!post.operations?.hasDownvoted);
+        const upvotes = post.stats?.upvotes ?? 0;
+        const downvotes = post.stats?.downvotes ?? 0;
         setScoreState(upvotes - downvotes);
       } catch (error) {
         console.error("Error checking reactions:", error);
@@ -56,66 +53,45 @@ export function useVoting({ postid, upvoteLabel = "Upvote", downvoteLabel = "Dow
     ) => {
       if (!sessionClient.data) {
         toast.error("Not logged in", {
-          description: `Please log in to ${type === "up" ? upvoteLabel.toLowerCase() : downvoteLabel.toLowerCase()} posts.`,
+          description: `Please log in to ${type === "up" ? "upvote" : "downvote"} posts.`,
         });
         return;
       }
       setIsLoading(type);
       if (hasUserReacted) {
-        const removingToastId = toast.loading(
-          type === "up" ? `Removing ${upvoteLabel.toLowerCase()}...` : `Removing ${downvoteLabel.toLowerCase()}...`,
-        );
         try {
-          const result = await undoReaction(sessionClient.data, {
-            post: toPostId(postid),
-            reaction: reactionType,
-          });
-          toast.dismiss(removingToastId);
-          if (result.isErr()) {
+          const result = await vote(sessionClient.data, postid, type, reactionType, hasUserReacted);
+          if (!result.success) {
             setIsLoading(null);
-            return console.error(result.error);
+            return;
           }
-          setHasUserReacted(false);
-          setScoreState(prev => prev + (type === "up" ? -1 : 1));
-          toast.success(type === "up" ? `${upvoteLabel} removed` : `${downvoteLabel} removed`);
+          setHasUserReacted(result.hasReacted);
+          setScoreState(prev => prev + result.scoreDelta);
+          toast.success(type === "up" ? `Upvote removed` : `Downvote removed`);
         } catch {
-          toast.error(
-            type === "up"
-              ? `Failed to remove ${upvoteLabel.toLowerCase()}.`
-              : `Failed to remove ${downvoteLabel.toLowerCase()}.`,
-          );
-          toast.dismiss(removingToastId);
+          toast.error(type === "up" ? `Failed to remove upvote.` : `Failed to remove downvote.`);
         } finally {
           setIsLoading(null);
         }
         return;
       }
       // Add reaction
-      const votingToastId = toast.loading(type === "up" ? `${upvoteLabel}...` : `${downvoteLabel}...`);
       try {
-        const result = await addReaction(sessionClient.data, {
-          post: toPostId(postid),
-          reaction: reactionType,
-        });
-        toast.dismiss(votingToastId);
-        if (result.isErr()) {
+        const result = await vote(sessionClient.data, postid, type, reactionType, hasUserReacted);
+        if (!result.success) {
           setIsLoading(null);
-          return console.error(result.error);
+          return;
         }
-        setHasUserReacted(true);
-        setScoreState(prev => prev + (type === "up" ? 1 : -1));
-        toast.success(type === "up" ? `${upvoteLabel}d!` : `${downvoteLabel}d!`);
+        setHasUserReacted(result.hasReacted);
+        setScoreState(prev => prev + result.scoreDelta);
+        toast.success(type === "up" ? `Upvoted!` : `Downvoted!`);
       } catch {
-        toast.error(
-          type === "up"
-            ? `Failed to ${upvoteLabel.toLowerCase()}. Please try again.`
-            : `Failed to ${downvoteLabel.toLowerCase()}. Please try again.`,
-        );
+        toast.error(type === "up" ? `Failed to upvote. Please try again.` : `Failed to downvote. Please try again.`);
       } finally {
         setIsLoading(null);
       }
     },
-    [sessionClient.data, postid, upvoteLabel, downvoteLabel],
+    [sessionClient.data, postid],
   );
 
   const handleUpvote = useCallback(
