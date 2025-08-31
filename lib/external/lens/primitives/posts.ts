@@ -1,9 +1,9 @@
 import { client } from "@/lib/external/lens/protocol-client";
 import { APP_ADDRESS } from "@/lib/shared/constants";
 import { Address } from "@/types/common";
-import type { AnyPost, Post as LensPost, Post, PostId, PublicClient, SessionClient } from "@lens-protocol/client";
+import type { Post as LensPost, Post, PostId, PublicClient, SessionClient } from "@lens-protocol/client";
 import { PostReferenceType, ReferenceRelevancyFilter, evmAddress } from "@lens-protocol/client";
-import { fetchPost, fetchPostReferences, fetchPosts } from "@lens-protocol/client/actions";
+import { fetchPost as fetchLensPost, fetchPostReferences, fetchPosts } from "@lens-protocol/client/actions";
 
 export interface PaginatedPostsResult {
   posts: LensPost[];
@@ -13,12 +13,12 @@ export interface PaginatedPostsResult {
 /**
  * Fetch a single post from Lens Protocol, allowing custom client (sessionClient)
  */
-export async function fetchPostWithClient(postId: string, lensClient: SessionClient | PublicClient): Promise<AnyPost> {
-  const result = await fetchPost(lensClient, { post: postId });
+export async function fetchPost(postId: string, lensClient: SessionClient | PublicClient): Promise<Post> {
+  const result = await fetchLensPost(lensClient, { post: postId });
   if (result.isErr()) {
     throw new Error(`Failed to fetch post: ${result.error.message}`);
   }
-  return result.value as AnyPost;
+  return result.value as Post;
 }
 
 /**
