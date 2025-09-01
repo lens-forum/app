@@ -17,7 +17,7 @@ export function CommunityMemberCard({ member }: CommunityMemberCardProps) {
     <li>
       <Link
         href={`/u/${username}`}
-        className="flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition hover:border-primary hover:bg-primary/5 dark:border-gray-700 dark:bg-gray-900"
+        className="flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition hover:border-primary hover:bg-primary/5 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-primary"
       >
         <Image
           src={avatarUrl}

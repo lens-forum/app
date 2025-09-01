@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { CommunityMemberCard } from "./community-member-card";
+import { CursorPagination } from "@/components/shared/cursor-pagination";
 import { Community } from "@/lib/domain/communities/types";
 import { client } from "@/lib/external/lens/protocol-client";
-import { GroupMember, PageSize, evmAddress } from "@lens-protocol/client";
+import { GroupMember, PageSize, PaginatedResultInfo, evmAddress } from "@lens-protocol/client";
 import { fetchGroupMembers } from "@lens-protocol/client/actions";
 
 interface CommunityMembersListProps {
@@ -13,10 +14,11 @@ export function CommunityMembersList({ community }: CommunityMembersListProps) {
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageInfo, setPageInfo] = useState<PaginatedResultInfo | null>(null);
 
   const groupAddress = community?.group?.address;
 
-  const fetchMembers = async (cursor?: string) => {
+  const fetchMembers = async (cursor?: string | null) => {
     setLoading(true);
     setError(null);
     try {
@@ -32,6 +34,7 @@ export function CommunityMembersList({ community }: CommunityMembersListProps) {
       }
       const { items, pageInfo } = result.value;
       setMembers(items as GroupMember[]);
+      setPageInfo(pageInfo as PaginatedResultInfo);
     } catch (e: any) {
       setError(e.message || "Unknown error");
     } finally {
@@ -64,6 +67,13 @@ export function CommunityMembersList({ community }: CommunityMembersListProps) {
           <CommunityMemberCard key={member.account.address} member={member} />
         ))}
       </ul>
+      <CursorPagination
+        hasPrev={!!(pageInfo && pageInfo.prev)}
+        hasNext={!!(pageInfo && pageInfo.next)}
+        loading={loading}
+        onPrev={pageInfo && pageInfo.prev ? () => fetchMembers(pageInfo.prev) : undefined}
+        onNext={pageInfo && pageInfo.next ? () => fetchMembers(pageInfo.next) : undefined}
+      />
     </div>
   );
 }
