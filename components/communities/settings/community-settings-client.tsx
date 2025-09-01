@@ -4,18 +4,19 @@ import { useState } from "react";
 import { CommunityRulesManager } from "@/components/communities/rules/edit/community-rules-manager";
 import { CommunityAccessDenied } from "@/components/communities/settings/community-access-denied";
 import { CommunityEditForm } from "@/components/communities/settings/community-edit-form";
+import { CommunityMembersList } from "@/components/communities/settings/community-members-list";
 import { CommunityModeratorsManager } from "@/components/communities/settings/community-moderators-manager";
 import { CommunitySettingsTabPanel } from "@/components/communities/settings/community-settings-tab-panel";
 import { useIsModerator } from "@/hooks/communities/use-is-moderator";
 import { Community } from "@/lib/domain/communities/types";
-import { BookOpen, Settings, Users } from "lucide-react";
+import { BookOpen, Settings, Sword, Users } from "lucide-react";
 
 interface CommunitySettingsClientProps {
   community: Community;
 }
 
 export function CommunitySettingsClient({ community }: CommunitySettingsClientProps) {
-  const [activeTab, setActiveTab] = useState<"general" | "moderators" | "rules">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "moderators" | "members" | "rules">("general");
   const isModerator = useIsModerator(community);
 
   if (!isModerator) {
@@ -54,8 +55,19 @@ export function CommunitySettingsClient({ community }: CommunitySettingsClientPr
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Users className="mr-2 inline h-4 w-4" />
+            <Sword className="mr-2 inline h-4 w-4" />
             Moderators
+          </button>
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`rounded-lg px-3 py-2 text-xs font-medium transition-all sm:rounded-xl sm:px-6 sm:py-3 sm:text-sm ${
+              activeTab === "members"
+                ? "bg-primary text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Users className="mr-2 inline h-4 w-4" />
+            Members
           </button>
           <button
             disabled
@@ -83,6 +95,12 @@ export function CommunitySettingsClient({ community }: CommunitySettingsClientPr
         {activeTab === "moderators" && (
           <CommunitySettingsTabPanel icon={Users} title="Manage Moderators">
             <CommunityModeratorsManager community={community} />
+          </CommunitySettingsTabPanel>
+        )}
+
+        {activeTab === "members" && (
+          <CommunitySettingsTabPanel icon={Users} title="Community Members">
+            <CommunityMembersList community={community} />
           </CommunitySettingsTabPanel>
         )}
 
