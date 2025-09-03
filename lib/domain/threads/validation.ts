@@ -63,6 +63,41 @@ export function validateCreateThreadForm(formData: CreateThreadFormData): Valida
     });
   }
 
+  // Poll validation (if poll exists)
+  if (formData.poll) {
+    if (!formData.poll.question.trim()) {
+      errors.push({
+        field: "poll.question",
+        message: "Poll question is required",
+        code: "POLL_QUESTION_REQUIRED",
+      });
+    }
+
+    if (formData.poll.options.length < 2) {
+      errors.push({
+        field: "poll.options",
+        message: "Poll must have at least 2 options",
+        code: "POLL_MIN_OPTIONS",
+      });
+    }
+
+    if (formData.poll.options.some(option => !option.trim())) {
+      errors.push({
+        field: "poll.options",
+        message: "All poll options must have text",
+        code: "POLL_EMPTY_OPTIONS",
+      });
+    }
+
+    if (formData.poll.duration <= 0) {
+      errors.push({
+        field: "poll.duration",
+        message: "Poll duration must be greater than 0",
+        code: "POLL_INVALID_DURATION",
+      });
+    }
+  }
+
   return {
     isValid: errors.length === 0,
     errors,

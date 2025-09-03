@@ -1,13 +1,15 @@
 import { TextEditor } from "@/components/editor/text-editor";
+import { PollCreator } from "@/components/polls/poll-creator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TagsInput } from "@/components/ui/tags-input";
+import { usePollForm } from "@/hooks/forms/use-poll-form";
 import { useTagsInput } from "@/hooks/forms/use-tags-input";
 import { useThreadCreateForm } from "@/hooks/forms/use-thread-create-form";
 import { useAuthStore } from "@/stores/auth-store";
-import { Send } from "lucide-react";
+import { BarChart3, Send } from "lucide-react";
 
 interface ThreadCreateFormProps {
   communityAddress: string;
@@ -20,6 +22,7 @@ export function ThreadCreateForm({ communityAddress }: ThreadCreateFormProps) {
     author: account?.address || "",
   });
   const { tags, tagInput, setTagInput, addTag, removeTag, handleTagInputKeyDown } = useTagsInput();
+  const { hasPoll, pollData, addPoll, removePoll, updatePollData, isPollValid, getPollForSubmission } = usePollForm();
 
   const suggestedTags = [
     "discussion",
@@ -37,7 +40,12 @@ export function ThreadCreateForm({ communityAddress }: ThreadCreateFormProps) {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newFormData = { ...formData, tags: tags.join(",") };
+    const pollForSubmission = getPollForSubmission();
+    const newFormData = {
+      ...formData,
+      tags: tags.join(","),
+      poll: pollForSubmission || undefined,
+    };
     setFormData(newFormData);
     handleSubmit(e, newFormData);
   };
@@ -85,6 +93,34 @@ export function ThreadCreateForm({ communityAddress }: ThreadCreateFormProps) {
               <TextEditor onChange={value => handleChange("content", value)} />
             </div>
           </div>
+
+          {/* Poll Section - Elegant card style */}
+          {!hasPoll && (
+            <div
+              className="group cursor-pointer rounded-2xl border border-gray-200/60 bg-white/50 p-4 transition-all hover:border-brand-300/60 hover:bg-brand-50/30 dark:border-gray-700/60 dark:bg-gray-800/50 dark:hover:border-brand-600/60 dark:hover:bg-brand-900/10"
+              onClick={addPoll}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 group-hover:bg-brand-200 dark:bg-brand-900/30 dark:group-hover:bg-brand-800/40">
+                    <BarChart3 className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300">
+                      Add a poll
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Get community feedback with voting options</p>
+                  </div>
+                </div>
+                <div className="text-xs font-medium text-brand-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-brand-400">
+                  Click to add
+                </div>
+              </div>
+            </div>
+          )}
+
+          {hasPoll && <PollCreator pollData={pollData} onPollDataChange={updatePollData} onRemovePoll={removePoll} />}
+
           {/* Tags Input */}
           <div className="space-y-2">
             <Label htmlFor="tags" className="text-sm font-medium text-foreground">
@@ -106,7 +142,7 @@ export function ThreadCreateForm({ communityAddress }: ThreadCreateFormProps) {
           <div className="flex justify-end pt-4">
             <Button
               type="submit"
-              disabled={isCreating || !formData.title.trim() || !formData.content.trim()}
+              disabled={isCreating || !formData.title.trim() || !formData.content.trim() || !isPollValid()}
               className="rounded-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50"
             >
               {isCreating ? (
