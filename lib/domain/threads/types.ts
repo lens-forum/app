@@ -22,4 +22,12 @@ export interface CreateThreadFormData {
   content: string;
   tags?: string;
   author: Address;
+  poll?: ThreadPoll;
+}
+
+export interface ThreadPoll {
+  question: string;
+  options: string[];
+  allowMultipleVotes: boolean;
+  duration: number; // in days
 }
